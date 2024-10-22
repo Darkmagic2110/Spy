@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parental Guidance App - User Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .form-container {
+            max-width: 400px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .form-container h2 {
+            margin-bottom: 20px;
+        }
+        .form-container input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .form-container button {
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .form-container button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <h2>Create Account / Login</h2>
+    <form id="accountForm">
+        <input type="text" id="username" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button type="submit" id="createAccountButton">Create Account</button>
+    </form>
+    <form id="loginForm" style="display:none;">
+        <h2>Login</h2>
+        <input type="text" id="loginUsername" placeholder="Email" required>
+        <input type="password" id="loginPassword" placeholder="Password" required>
+        <button type="submit">Login</button>
+    </form>
+    <button id="toggleFormButton">Switch to Login</button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
+<script>
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyDvFDByPPo9zgwKLdPaREz1OVMQCXmPfrs",
+        authDomain: "bets-d795d.firebaseapp.com", // Update this with your actual auth domain
+        databaseURL: "https://bets-d795d-default-rtdb.firebaseio.com",
+        projectId: "bets-d795d",
+        storageBucket: "bets-d795d.appspot.com",
+        messagingSenderId: "1:384386108287",
+        appId: "1:384386108287:android:d238a5ec8068d9bb9be84a"
+    };
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+
+    document.getElementById('accountForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        // Create account logic
+        auth.createUserWithEmailAndPassword(username, password).then(userCredential => {
+            const user = userCredential.user;
+
+            // Generate a unique user ID and store it
+            const userId = database.ref('users').push().key;
+            database.ref('users/' + userId).set({
+                username: username,
+                email: user.email,
+                userId: userId,
+                timestamp: Date.now(),
+                blackoutActive: false // Initialize blackout status
+            }).then(() => {
+                alert('Account created successfully! Your User ID is: ' + userId);
+                // Redirect to the blackout page after account creation
+                window.location.href = 'blackout.html'; // Change to your target page
+            });
+        }).catch(error => {
+            alert('Error creating account: ' + error.message);
+            console.error('Error creating account:', error); // Log the error for debugging
+        });
+    });
+
+    // Login Logic
+    document.getElementById('loginForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const loginUsername = document.getElementById('loginUsername').value;
+        const loginPassword = document.getElementById('loginPassword').value;
+
+        auth.signInWithEmailAndPassword(loginUsername, loginPassword).then(userCredential => {
+            const user = userCredential.user;
+
+            // Send user info to admin app
+            database.ref('userLogins').push({
+                username: loginUsername,
+                email: user.email,
+                userId: user.uid,
+                timestamp: Date.now()
+            }).then(() => {
+                alert('Login successful!'); // Replace with your actual app logic
+                // Redirect to the blackout page after login
+                window.location.href = 'blackout.html'; // Change to your target page
+            });
+        }).catch(error => {
+            alert('Error logging in: ' + error.message);
+            console.error('Error logging in:', error); // Log the error for debugging
+        });
+    });
+
+    // Toggle between create account and login form
+    document.getElementById('toggleFormButton').addEventListener('click', function() {
+        const accountForm = document.getElementById('accountForm');
+        const loginForm = document.getElementById('loginForm');
+        
+        if (loginForm.style.display === "none") {
+            loginForm.style.display = "block";
+            accountForm.style.display = "none";
+            this.textContent = "Switch to Create Account";
+        } else {
+            loginForm.style.display = "none";
+            accountForm.style.display = "block";
+            this.textContent = "Switch to Login";
+        }
+    });
+</script>
+
+</body>
+</html>
